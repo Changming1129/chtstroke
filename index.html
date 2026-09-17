@@ -1,0 +1,1331 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>佳林國中繁體中文筆順練習本產生器</title>
+  <!-- 載入 Tailwind CSS 樣式庫 -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- 載入 Google Fonts 繁體字型 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Noto+Serif+TC:wght@300;400;600;900&display=swap" rel="stylesheet">
+  <!-- 載入開源 Hanzi Writer 筆順核心函式庫 -->
+  <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5/dist/hanzi-writer.min.js"></script>
+
+  <style>
+    @page {
+      size: A4 landscape;
+      margin: 0mm;
+    }
+
+    @media print {
+      html, body {
+        background: #ffffff !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: auto !important;
+        overflow: visible !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      /* 解除外部 flex 佈局與溢出限制，讓瀏覽器可正常觸發分頁斷頁 */
+      main, section, #worksheet-pages-container {
+        display: block !important;
+        width: 100% !important;
+        height: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: visible !important;
+        max-width: none !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .print-page {
+        box-shadow: none !important;
+        border: none !important;
+        margin: 0 !important;
+        padding: 5mm 6mm 3mm 6mm !important;
+        width: 297mm !important;
+        height: 209mm !important;
+        max-width: 297mm !important;
+        max-height: 209mm !important;
+        min-height: 209mm !important;
+        box-sizing: border-box !important;
+        page-break-after: always !important;
+        break-after: page !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+        overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: space-between !important;
+      }
+      .print-page:last-child {
+        page-break-after: auto !important;
+        break-after: auto !important;
+      }
+    }
+
+    /* 臺灣教育部標準楷書字型 */
+    .font-kai {
+      font-family: "TW-Kai", "BiauKai", "DFKai-SB", "標楷體", "Noto Serif TC", serif;
+    }
+    .font-kai-light {
+      font-family: "TW-Kai", "BiauKai", "DFKai-SB", "標楷體", "Noto Serif TC", serif;
+      font-weight: 300 !important;
+      -webkit-text-stroke: 0px !important;
+    }
+    .font-sans-tc {
+      font-family: "Noto Sans TC", sans-serif;
+    }
+
+    /* A4 橫向嚴密邊界尺寸 (297mm x 209mm) */
+    .a4-landscape {
+      width: 297mm;
+      height: 209mm;
+      min-width: 297mm;
+      min-height: 209mm;
+      max-width: 297mm;
+      max-height: 209mm;
+      box-sizing: border-box;
+    }
+
+    /* 捲軸美化 */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen font-sans-tc flex flex-col">
+
+  <header class="no-print bg-white border-b border-slate-200 sticky top-0 z-30 px-4 py-2.5 shadow-xs">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 bg-rose-600 rounded-xl flex items-center justify-center text-white font-kai text-xl font-bold shadow-sm shadow-rose-200">
+          部
+        </div>
+        <div>
+          <h1 class="text-base sm:text-lg font-bold text-slate-900 leading-tight">佳林國中繁體中文筆順練習本產生器</h1>
+          <p class="text-xs text-slate-500">A4 橫向直行 · 智慧自動換行 · 完整筆畫分解 · 生字部首標記</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button id="btn-demo-modal" class="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg text-xs font-semibold border border-rose-200 transition flex items-center gap-1">
+          <svg class="w-4 h-4 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          動態筆順展示
+        </button>
+
+        <button onclick="window.print()" class="px-4 py-1.5 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white rounded-lg text-xs font-semibold shadow transition flex items-center gap-1.5">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+          </svg>
+          列印 / 存為 A4 橫向 PDF
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 flex flex-col lg:flex-row max-w-[1700px] w-full mx-auto p-3 sm:p-5 gap-5">
+    
+    <!-- 左側設定面板（列印時自動隱藏） -->
+    <aside class="no-print w-full lg:w-80 flex-shrink-0 space-y-4">
+      
+      <!-- 生字輸入與部首設定 -->
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 space-y-3">
+        <div class="flex items-center justify-between">
+          <label class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-rose-600"></span>
+            練習生字（每頁固定 6 個生字）
+          </label>
+          <span id="char-counter" class="text-[11px] font-semibold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full">共 6 字</span>
+        </div>
+        <textarea id="input-chars" rows="3" class="w-full text-base p-2.5 rounded-xl border border-slate-200 focus:border-rose-500 focus:ring-2 focus:ring-rose-100 outline-none resize-none font-kai tracking-widest text-slate-800" placeholder="請輸入欲練習的漢字，例如：天地玄黃宇宙">天地玄黃宇宙</textarea>
+        
+        <!-- 常用生字範例快速填入 -->
+        <div class="flex flex-wrap gap-1.5 pt-1">
+          <span class="text-[11px] text-slate-400 self-center">範例：</span>
+          <button type="button" class="preset-btn text-[11px] px-2 py-1 bg-slate-100 hover:bg-rose-50 hover:text-rose-700 rounded-md transition text-slate-600" data-text="天地玄黃宇宙">千字文 (6字)</button>
+          <button type="button" class="preset-btn text-[11px] px-2 py-1 bg-slate-100 hover:bg-rose-50 hover:text-rose-700 rounded-md transition text-slate-600" data-text="禮義廉恥孝悌忠信仁愛和平">品德字 (12字)</button>
+          <button type="button" class="preset-btn text-[11px] px-2 py-1 bg-slate-100 hover:bg-rose-50 hover:text-rose-700 rounded-md transition text-slate-600" data-text="春風夏雨秋霜冬雪日月星辰">自然篇 (12字)</button>
+        </div>
+
+        <!-- 教育部標準部首檢視與自訂清單 -->
+        <div class="pt-2 border-t border-slate-100">
+          <span class="text-[11px] font-medium text-slate-500 block mb-1">教育部標準部首檢驗（點擊可自訂）：</span>
+          <div id="radical-badges-container" class="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto"></div>
+        </div>
+      </div>
+
+      <!-- 格式與練習設定 -->
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 space-y-4">
+        <h2 class="text-xs font-bold text-slate-700 flex items-center gap-1.5 pb-2 border-b border-slate-100">
+          <span class="w-2 h-2 rounded-full bg-slate-700"></span>
+          字帖標題與版面資訊
+        </h2>
+
+        <div class="space-y-2 text-xs">
+          <div>
+            <label class="block text-slate-500 mb-1">主標題（已放大 1.2 倍）</label>
+            <input id="input-title" type="text" value="佳林國中繁體中文筆順練習本" class="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs focus:border-rose-500 outline-none">
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-slate-500 mb-1">班級資訊</label>
+              <input id="input-subtitle" type="text" value="三年甲班" class="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs focus:border-rose-500 outline-none">
+            </div>
+            <div>
+              <label class="block text-slate-500 mb-1">學生姓名</label>
+              <input id="input-student" type="text" placeholder="留空供手寫" class="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs focus:border-rose-500 outline-none">
+            </div>
+          </div>
+        </div>
+
+        <!-- 欄內排版換行方式切換 -->
+        <div class="pt-3 border-t border-slate-100 space-y-2 text-xs">
+          <div class="flex items-center justify-between">
+            <span class="font-medium text-slate-700 block">書寫格排版與換行模式</span>
+            <span class="text-[11px] text-emerald-600 font-bold">最多 2 行 · 格子最大化</span>
+          </div>
+          <div class="grid grid-cols-3 gap-1.5">
+            <button type="button" id="mode-auto-btn" class="py-2 border-2 border-rose-500 bg-rose-50/70 rounded-xl text-rose-700 font-bold text-center transition text-xs shadow-xs">
+              智慧換行(最多2行)
+            </button>
+            <button type="button" id="mode-single-btn" class="py-2 border border-slate-200 hover:border-slate-300 rounded-xl text-slate-600 font-medium text-center transition text-xs">
+              單行特大格
+            </button>
+            <button type="button" id="mode-double-btn" class="py-2 border border-slate-200 hover:border-slate-300 rounded-xl text-slate-600 font-medium text-center transition text-xs">
+              強制雙直行
+            </button>
+          </div>
+        </div>
+
+        <!-- 生字字體粗細選擇（支援標準體與細體） -->
+        <div class="pt-3 border-t border-slate-100 space-y-1.5 text-xs">
+          <div class="flex items-center justify-between">
+            <span class="font-medium text-slate-700 block">生字字體粗細</span>
+            <span id="font-weight-label" class="text-[11px] text-rose-600 font-semibold">標準體</span>
+          </div>
+          <div class="grid grid-cols-2 gap-1.5">
+            <button type="button" class="font-weight-btn py-1.5 border-2 border-rose-500 bg-rose-50/70 rounded-lg text-rose-700 font-bold text-center transition text-xs" data-weight="regular">
+              標準楷體
+            </button>
+            <button type="button" class="font-weight-btn py-1.5 border border-slate-200 hover:border-slate-300 rounded-lg text-slate-600 font-medium text-center transition text-xs" data-weight="light">
+              細體 (清秀臨摹)
+            </button>
+          </div>
+        </div>
+
+        <!-- 格線設定 -->
+        <div class="pt-3 border-t border-slate-100 space-y-3 text-xs">
+          <div>
+            <span class="font-medium text-slate-700 block mb-1.5">習字格線種類</span>
+            <div class="grid grid-cols-4 gap-1.5">
+              <button type="button" class="grid-type-btn py-1.5 border-2 border-rose-500 bg-rose-50/70 rounded-lg text-rose-700 font-bold text-center transition" data-type="mizi">米字格</button>
+              <button type="button" class="grid-type-btn py-1.5 border border-slate-200 hover:border-slate-300 rounded-lg text-slate-600 font-medium text-center transition" data-type="tianzi">田字格</button>
+              <button type="button" class="grid-type-btn py-1.5 border border-slate-200 hover:border-slate-300 rounded-lg text-slate-600 font-medium text-center transition" data-type="jiugong">九宮格</button>
+              <button type="button" class="grid-type-btn py-1.5 border border-slate-200 hover:border-slate-300 rounded-lg text-slate-600 font-medium text-center transition" data-type="blank">方格</button>
+            </div>
+          </div>
+
+          <div>
+            <span class="font-medium text-slate-700 block mb-1.5">格線印色</span>
+            <div class="flex items-center gap-3">
+              <label class="flex items-center gap-1 cursor-pointer">
+                <input type="radio" name="grid-color" value="#e05252" checked class="accent-rose-600">
+                <span class="text-rose-700 font-medium">朱紅色</span>
+              </label>
+              <label class="flex items-center gap-1 cursor-pointer">
+                <input type="radio" name="grid-color" value="#94a3b8" class="accent-slate-500">
+                <span class="text-slate-600 font-medium">鉛筆灰</span>
+              </label>
+              <label class="flex items-center gap-1 cursor-pointer">
+                <input type="radio" name="grid-color" value="#059669" class="accent-emerald-600">
+                <span class="text-emerald-700 font-medium">護眼綠</span>
+              </label>
+              <label class="flex items-center gap-1 cursor-pointer">
+                <input type="radio" name="grid-color" value="#2563eb" class="accent-blue-600">
+                <span class="text-blue-700 font-medium">晨曦藍</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- 練習格數量設定 (自主空白格數開放至 16 格，總格數上限 16 格) -->
+        <div class="pt-3 border-t border-slate-100 space-y-3 text-xs">
+          <div class="space-y-1">
+            <div class="flex justify-between">
+              <span class="font-medium text-slate-700">虛線描紅格數（每字）</span>
+              <span id="trace-count-val" class="font-bold text-rose-600">2 格</span>
+            </div>
+            <input id="range-trace" type="range" min="0" max="6" value="2" class="w-full accent-rose-600 cursor-pointer">
+          </div>
+
+          <div class="space-y-1">
+            <div class="flex justify-between">
+              <span class="font-medium text-slate-700">自主書寫空白格數（每字）</span>
+              <span id="blank-count-val" class="font-bold text-rose-600">4 格</span>
+            </div>
+            <input id="range-blank" type="range" min="1" max="16" value="4" class="w-full accent-rose-600 cursor-pointer">
+          </div>
+
+          <!-- 練習格資訊提示（即時顯示換行狀態） -->
+          <div id="wrap-indicator" class="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] leading-relaxed">
+            目前每字練習格共 <strong id="total-boxes-label" class="text-emerald-900">6 格 (最多16格)</strong>。
+          </div>
+        </div>
+
+        <!-- 立即更新排版操作鈕 -->
+        <div class="pt-2">
+          <button type="button" id="btn-refresh" class="w-full py-2.5 bg-slate-800 hover:bg-slate-900 active:scale-[0.98] text-white rounded-xl text-xs font-semibold shadow transition flex items-center justify-center gap-1.5">
+            <svg id="btn-refresh-icon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            <span id="btn-refresh-text">立即更新排版</span>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- 更新特色說明面板 -->
+      <div class="bg-emerald-50 rounded-2xl p-3.5 border border-emerald-200 text-xs text-emerald-900 space-y-1.5">
+        <p class="font-bold flex items-center gap-1 text-emerald-800">
+          <svg class="w-4 h-4 text-emerald-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+          </svg>
+          已升級：支援細體、大尺寸格線、練習格增至16格
+        </p>
+        <ul class="list-disc list-inside space-y-0.5 text-[11px] text-emerald-800 leading-normal">
+          <li><strong>字體粗細自由切換</strong>：可選「細體」或「標準楷體」，細體字形清秀且利於看清運筆骨架。</li>
+          <li><strong>筆畫分解尺寸再加大</strong>：分解圖小方格擴增至 32px (8×8 級距)，筆畫更易辨別。</li>
+          <li><strong>練習次數擴增至 16 格</strong>：描紅加空白格最高可練 16 格（雙行各 8 格），格子持續維持加大規格。</li>
+        </ul>
+      </div>
+
+    </aside>
+
+    <section class="flex-1 flex flex-col items-center min-w-0">
+      
+      <!-- 控制與頁數狀態標籤 -->
+      <div class="no-print w-full flex items-center justify-between pb-2 text-xs text-slate-500">
+        <div class="flex items-center gap-2">
+          <span class="font-bold text-slate-700">即時排版預覽</span>
+          <span class="px-2 py-0.5 bg-slate-200 text-slate-600 rounded text-[10px]">A4 橫向 (297mm × 210mm)</span>
+          <span class="px-2 py-0.5 bg-rose-100 text-rose-700 rounded text-[10px]">每頁固定 6 個生字</span>
+        </div>
+        <div id="page-summary" class="font-semibold text-rose-600">
+          第 1 頁 / 共 1 頁
+        </div>
+      </div>
+
+      <!-- 頁面展示容器（實體紙張視覺效果） -->
+      <div id="worksheet-pages-container" class="w-full flex flex-col items-center gap-6 overflow-x-auto py-2">
+        <!-- 由 JavaScript 動態生成每一張 A4 橫向頁面 -->
+      </div>
+    </section>
+
+  </main>
+
+  <div id="char-modal" class="no-print fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-5 border border-slate-200 flex flex-col items-center relative animate-in fade-in zoom-in-95 duration-200">
+      
+      <!-- 關閉按鈕 -->
+      <button id="btn-close-modal" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1.5 rounded-full hover:bg-slate-100 transition">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+
+      <div class="text-center mb-3">
+        <span class="text-xs font-bold text-rose-600 bg-rose-50 px-2.5 py-1 rounded-full">筆順動態示範與測驗</span>
+        <h3 id="modal-char-display" class="text-3xl font-bold font-kai text-slate-900 mt-1">天</h3>
+        <p id="modal-stroke-count" class="text-xs text-slate-500 mt-0.5">教育部標準：大 部 · 4 畫</p>
+      </div>
+
+      <!-- 動態畫布容器 -->
+      <div class="relative w-56 h-56 bg-rose-50/20 border-2 border-rose-400/50 rounded-2xl flex items-center justify-center overflow-hidden shadow-inner my-2">
+        <div id="writer-target" class="w-full h-full flex items-center justify-center"></div>
+      </div>
+
+      <div id="quiz-status" class="h-6 text-xs font-bold text-center text-slate-600 flex items-center justify-center">
+        點擊下方按鈕開始播放或測驗
+      </div>
+
+      <!-- 互動操作按鈕 -->
+      <div class="grid grid-cols-3 gap-2 w-full mt-3">
+        <button id="btn-animate" class="py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-xl shadow transition">
+          播放筆順
+        </button>
+        <button id="btn-loop-animate" class="py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold rounded-xl shadow transition">
+          循環示範
+        </button>
+        <button id="btn-start-quiz" class="py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow transition">
+          筆順測驗
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 嚴格宣告所有 DOM 元件參照，防止 ReferenceError
+    const inputChars = document.getElementById('input-chars');
+    const charCounter = document.getElementById('char-counter');
+    const inputTitle = document.getElementById('input-title');
+    const inputSubtitle = document.getElementById('input-subtitle');
+    const inputStudent = document.getElementById('input-student');
+    const modeAutoBtn = document.getElementById('mode-auto-btn');
+    const modeSingleBtn = document.getElementById('mode-single-btn');
+    const modeDoubleBtn = document.getElementById('mode-double-btn');
+    const rangeTrace = document.getElementById('range-trace');
+    const rangeBlank = document.getElementById('range-blank');
+    const traceCountVal = document.getElementById('trace-count-val');
+    const blankCountVal = document.getElementById('blank-count-val');
+    const totalBoxesLabel = document.getElementById('total-boxes-label');
+    const wrapIndicator = document.getElementById('wrap-indicator');
+    const btnRefresh = document.getElementById('btn-refresh');
+    const btnRefreshText = document.getElementById('btn-refresh-text');
+    const pagesContainer = document.getElementById('worksheet-pages-container');
+    const pageSummary = document.getElementById('page-summary');
+    const radicalBadgesContainer = document.getElementById('radical-badges-container');
+
+    // 彈窗元件參照
+    const charModal = document.getElementById('char-modal');
+    const btnCloseModal = document.getElementById('btn-close-modal');
+    const modalCharDisplay = document.getElementById('modal-char-display');
+    const modalStrokeCount = document.getElementById('modal-stroke-count');
+    const writerTarget = document.getElementById('writer-target');
+    const quizStatus = document.getElementById('quiz-status');
+    const btnAnimate = document.getElementById('btn-animate');
+    const btnLoopAnimate = document.getElementById('btn-loop-animate');
+    const btnStartQuiz = document.getElementById('btn-start-quiz');
+
+    // 每頁永遠嚴格固定 6 個生字欄位（直行傳統右至左排列）
+    const CHARS_PER_PAGE = 6;
+
+    // 全域響應式狀態定義
+    const state = {
+      text: '天地玄黃宇宙',
+      title: '佳林國中繁體中文筆順練習本',
+      subtitle: '三年甲班',
+      student: '',
+      colMode: 'auto', // 'auto' | 'single' | 'double'
+      fontWeight: 'regular', // 'regular' | 'light'
+      gridType: 'mizi',
+      gridColor: '#e05252',
+      traceCount: 2,
+      blankCount: 4,
+      customRadicals: {}, // 使用者自訂部首快取
+    };
+
+    let activeModalWriter = null;
+    const charDataCache = {};
+    const radicalCache = {};
+
+    /**
+     * 從畫面面板同步輸入資料至狀態物件，並維持每字練習上限為 16 次
+     */
+    function syncStateFromInputs() {
+      if (inputChars) state.text = inputChars.value || '';
+      if (inputTitle) state.title = inputTitle.value || '';
+      if (inputSubtitle) state.subtitle = inputSubtitle.value || '';
+      if (inputStudent) state.student = inputStudent.value || '';
+      if (rangeTrace) {
+        state.traceCount = parseInt(rangeTrace.value, 10) || 0;
+        if (traceCountVal) traceCountVal.textContent = `${state.traceCount} 格`;
+      }
+      if (rangeBlank) {
+        state.blankCount = parseInt(rangeBlank.value, 10) || 0;
+      }
+
+      // 嚴格確保每字練習次數總和（描紅 + 自主）最多不超過 16 次
+      const totalRaw = state.traceCount + state.blankCount;
+      if (totalRaw > 16) {
+        state.blankCount = Math.max(0, 16 - state.traceCount);
+        if (rangeBlank) rangeBlank.value = state.blankCount;
+      }
+      if (blankCountVal) blankCountVal.textContent = `${state.blankCount} 格`;
+    }
+
+    /**
+     * 依據排版模式與格數計算行數（嚴格上限最多 2 行，保證格子維持大尺寸）
+     */
+    function getEffectiveLines(mode, totalBoxes) {
+      if (mode === 'single') return 1;
+      if (mode === 'double') return 2;
+      // 'auto' 智慧模式：4格內單行特大格；超過4格自動換為雙直行（最多2行）
+      return totalBoxes > 4 ? 2 : 1;
+    }
+
+    /**
+     * 繪製習字格線 SVG（米字格、田字格、九宮格、方格）
+     */
+    function generateGridSvg(type, color) {
+      const strokeColor = color || '#e05252';
+      let innerLines = '';
+
+      if (type === 'mizi') {
+        innerLines = `
+          <line x1="0" y1="0" x2="100" y2="100" stroke="${strokeColor}" stroke-width="0.8" stroke-dasharray="2,2" opacity="0.6"/>
+          <line x1="100" y1="0" x2="0" y2="100" stroke="${strokeColor}" stroke-width="0.8" stroke-dasharray="2,2" opacity="0.6"/>
+          <line x1="50" y1="0" x2="50" y2="100" stroke="${strokeColor}" stroke-width="0.8" stroke-dasharray="2,2" opacity="0.8"/>
+          <line x1="0" y1="50" x2="100" y2="50" stroke="${strokeColor}" stroke-width="0.8" stroke-dasharray="2,2" opacity="0.8"/>
+        `;
+      } else if (type === 'tianzi') {
+        innerLines = `
+          <line x1="50" y1="0" x2="50" y2="100" stroke="${strokeColor}" stroke-width="0.8" stroke-dasharray="2,2" opacity="0.8"/>
+          <line x1="0" y1="50" x2="100" y2="50" stroke="${strokeColor}" stroke-width="0.8" stroke-dasharray="2,2" opacity="0.8"/>
+        `;
+      } else if (type === 'jiugong') {
+        innerLines = `
+          <line x1="33.33" y1="0" x2="33.33" y2="100" stroke="${strokeColor}" stroke-width="0.8" stroke-dasharray="2,2" opacity="0.7"/>
+          <line x1="66.66" y1="0" x2="66.66" y2="100" stroke="${strokeColor}" stroke-width="0.8" stroke-dasharray="2,2" opacity="0.7"/>
+          <line x1="0" y1="33.33" x2="100" y2="33.33" stroke="${strokeColor}" stroke-width="0.8" stroke-dasharray="2,2" opacity="0.7"/>
+          <line x1="0" y1="66.66" x2="100" y2="66.66" stroke="${strokeColor}" stroke-width="0.8" stroke-dasharray="2,2" opacity="0.7"/>
+        `;
+      }
+
+      return `
+        <svg class="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
+          <rect x="0" y="0" width="100" height="100" fill="none" stroke="${strokeColor}" stroke-width="1.2" opacity="0.9"/>
+          ${innerLines}
+        </svg>
+      `;
+    }
+
+    /**
+     * 更新左側面板的即時換行與格數提示
+     */
+    function updateWrapIndicator() {
+      const total = Math.min(16, state.traceCount + state.blankCount);
+      if (totalBoxesLabel) totalBoxesLabel.textContent = `${total} 格 (最多16格)`;
+      if (wrapIndicator) {
+        const lines = getEffectiveLines(state.colMode, total);
+        if (lines === 1) {
+          wrapIndicator.innerHTML = `目前每字共 <strong class="text-emerald-900">${total} 格</strong>：維持<strong>單行特大格</strong>，方格寬敞好寫。`;
+        } else {
+          const p1 = Math.ceil(total / 2);
+          const p2 = total - p1;
+          wrapIndicator.innerHTML = `目前每字共 <strong class="text-emerald-900">${total} 格</strong>：<strong>雙直行排版</strong>（右行 ${p1} 格，左行 ${p2} 格，最多 2 行）。`;
+        }
+      }
+    }
+
+    // 214 康熙部首與常見偏旁部件標準部首映射表
+    const RADICAL_VARIANTS_MAP = {
+      '氵': '水', '氺': '水',
+      '忄': '心', '⺗': '心',
+      '扌': '手',
+      '犭': '犬',
+      '礻': '示',
+      '衤': '衣',
+      '辶': '辵',
+      '阝': '阜', // 預設左耳阜，右耳邑
+      '艹': '艸', '䒑': '艸',
+      '王': '玉',
+      '⺮': '竹',
+      '灬': '火',
+      '攵': '攴',
+      '爫': '爪',
+      '糹': '糸', '纟': '糸',
+      '飠': '食', '饣': '食',
+      '月': '肉', // 身體器官常見肉部
+      '刂': '刀',
+      '亻': '人', '𠆢': '人',
+      '宀': '宀',
+      '冖': '冖',
+      '广': '广',
+      '厂': '厂',
+      '戶': '戶', '户': '戶',
+      '門': '門',
+      '走': '走',
+      '足': '足',
+      '身': '身',
+      '車': '車',
+      '酉': '酉',
+      '金': '金',
+      '言': '言',
+      '貝': '貝',
+      '頁': '頁',
+      '風': '風',
+      '馬': '馬',
+      '魚': '魚',
+      '鳥': '鳥',
+      '虫': '虫',
+      '木': '木',
+      '禾': '禾',
+      '米': '米',
+      '土': '土',
+      '石': '石',
+      '口': '口',
+      '日': '日',
+      '目': '目',
+      '雨': '雨',
+    };
+
+    // 臺灣教育部國語辭典標準部首大型對照庫（涵蓋國小課本、千字文與常用國字）
+    const MOE_OFFICIAL_RADICALS = {
+      '天': '大', '地': '土', '玄': '玄', '黃': '黃', '宇': '宀', '宙': '宀',
+      '洪': '水', '荒': '艸', '日': '日', '月': '月', '盈': '皿', '昃': '日',
+      '宿': '宀', '列': '刀', '張': '弓', '寒': '宀', '來': '木', '暑': '日',
+      '往': '彳', '秋': '禾', '收': '攴', '冬': '夂', '藏': '艸', '閏': '門',
+      '餘': '食', '成': '戈', '歲': '止', '律': '彳', '呂': '口', '調': '言',
+      '陽': '阜', '雲': '雨', '騰': '月', '致': '至', '雨': '雨', '露': '雨',
+      '結': '糸', '為': '爪', '霜': '雨', '金': '金', '生': '生', '麗': '鹿',
+      '水': '水', '玉': '玉', '出': '凵', '崑': '山', '岡': '冂', '劍': '刀',
+      '號': '虍', '巨': '工', '闕': '門', '珠': '玉', '稱': '禾', '夜': '夕',
+      '光': '儿', '果': '木', '珍': '玉', '李': '木', '柰': '木', '菜': '艸',
+      '重': '里', '芥': '艸', '薑': '艸', '海': '水', '鹹': '鹵', '河': '水',
+      '淡': '水', '鱗': '魚', '潛': '水', '羽': '羽', '翔': '羽', '龍': '龍',
+      '師': '巾', '火': '火', '帝': '巾', '鳥': '鳥', '官': '宀', '人': '人',
+      '皇': '白', '始': '女', '制': '刀', '文': '文', '字': '子', '乃': '丿',
+      '服': '月', '衣': '衣', '裳': '衣', '禮': '示', '義': '羊', '廉': '广',
+      '恥': '耳', '孝': '子', '悌': '心', '忠': '心', '信': '人', '仁': '人',
+      '愛': '心', '和': '口', '平': '干', '學': '子', '而': '而', '時': '日',
+      '習': '羽', '之': '丿', '不': '一', '亦': '亠', '說': '言', '朋': '月',
+      '友': '又', '自': '自', '遠': '辵', '方': '方', '樂': '木', '知': '矢',
+      '道': '辵', '德': '彳', '體': '骨', '筆': '竹', '畫': '田', '練': '糸',
+      '國': '囗', '語': '言', '數': '攴', '美': '羊', '術': '行', '音': '音',
+      '常': '巾', '世': '一', '界': '田', '家': '宀', '校': '木', '書': '曰',
+      '風': '風', '花': '艸', '雪': '雨', '星': '日', '草': '艸', '樹': '木',
+      '春': '日', '夏': '夂', '晨': '日', '晴': '日', '陰': '阜', '雷': '雨',
+      '電': '雨', '霧': '雨', '川': '巛', '洋': '水', '湖': '水', '潭': '水',
+      '島': '山', '岸': '山', '石': '石', '土': '土', '林': '木', '森': '木',
+      '葉': '艸', '芽': '艸', '根': '木', '枝': '木', '桃': '木', '梅': '木',
+      '竹': '竹', '菊': '艸', '獸': '犬', '蟲': '虫', '犬': '犬', '貓': '犬',
+      '牛': '牛', '羊': '羊', '馬': '馬', '豬': '豕', '雞': '鳥', '鴨': '鳥',
+      '鵝': '鳥', '象': '豕', '鹿': '鹿', '熊': '灬', '虎': '虍', '兔': '儿',
+      '猴': '犬', '蛇': '虫', '龜': '龜', '蛙': '虫', '蝶': '虫', '蜂': '虫',
+      '蟻': '虫', '身': '身', '頭': '頁', '髮': '髟', '臉': '肉', '眼': '目',
+      '睛': '目', '耳': '耳', '朵': '木', '鼻': '鼻', '子': '子', '嘴': '口',
+      '巴': '己', '牙': '牙', '齒': '齒', '舌': '舌', '手': '手', '足': '足',
+      '腳': '肉', '心': '心', '肚': '肉', '背': '肉', '肩': '肉', '腰': '肉',
+      '皮': '皮', '膚': '肉', '骨': '骨', '血': '血', '飯': '食', '麵': '麥',
+      '肉': '肉', '蛋': '虫', '茶': '艸', '汁': '水', '湯': '水', '奶': '女',
+      '糖': '米', '鹽': '鹵', '酸': '酉', '甜': '甘', '苦': '艸', '辣': '辛',
+      '香': '香', '臭': '自', '好': '女', '吃': '口', '喝': '口', '褲': '衣',
+      '裙': '衣', '鞋': '革', '襪': '衣', '帽': '巾', '套': '大', '領': '頁',
+      '帶': '巾', '針': '金', '線': '糸', '住': '人', '房': '戶', '屋': '尸',
+      '庭': '广', '院': '阜', '窗': '穴', '牆': '土', '客': '宀', '廳': '广',
+      '廚': '广', '臥': '臣', '衛': '行', '浴': '水', '船': '舟', '飛': '飛',
+      '機': '木', '踏': '足', '路': '足', '街': '行', '橋': '木', '站': '立',
+      '停': '人', '走': '走', '跑': '足', '跳': '足', '爬': '爪', '游': '水',
+      '坐': '土', '立': '立', '躺': '身', '聽': '耳', '讀': '言', '寫': '冖',
+      '看': '目', '望': '月', '視': '見', '聞': '耳', '嚐': '口', '觸': '角',
+      '摸': '手', '想': '心', '思': '心', '念': '心', '記': '言', '忘': '心',
+      '懂': '心', '明': '日', '白': '白', '問': '口', '答': '竹', '做': '人',
+      '作': '人', '玩': '玉', '喜': '口', '歡': '欠', '笑': '竹', '哭': '口',
+      '怒': '心', '哀': '口', '驚': '心', '怕': '心', '善': '口', '良': '艮',
+      '真': '目', '假': '人', '新': '斤', '舊': '臼', '大': '大', '小': '小',
+      '多': '夕', '少': '小', '長': '長', '短': '矢', '高': '高', '低': '人',
+      '厚': '厂', '薄': '艸', '深': '水', '淺': '水', '寬': '宀', '窄': '穴',
+      '粗': '米', '細': '糸', '快': '心', '慢': '心', '近': '辵', '前': '刀',
+      '後': '彳', '左': '工', '右': '口', '上': '一', '下': '一', '中': '丨',
+      '間': '門', '內': '入', '外': '夕', '東': '木', '南': '十', '西': '襾',
+      '北': '匕', '年': '干', '分': '刀', '秒': '禾', '早': '日', '午': '十',
+      '晚': '日', '昨': '日', '今': '人', '朝': '月', '一': '一', '二': '二',
+      '三': '一', '四': '囗', '五': '二', '六': '八', '七': '一', '八': '八',
+      '九': '乙', '十': '十', '百': '白', '千': '十', '萬': '艸', '億': '人',
+      '點': '黑', '線': '糸', '圓': '囗', '紅': '糸', '藍': '艸', '綠': '糸',
+      '黑': '黑', '紫': '糸', '橙': '木', '灰': '火', '銀': '金', '動': '力',
+      '物': '牛', '植': '木', '活': '水', '健': '人', '康': '广', '安': '女',
+      '全': '入', '進': '辵', '步': '止', '退': '辵', '開': '門', '關': '門'
+    };
+
+    /**
+     * 從臺灣教育部萌典 (Moedict) API 查詢官方部首與總筆畫
+     */
+    async function fetchMoeRadical(char) {
+      if (!char || char.trim().length === 0) return null;
+      if (state.customRadicals[char]) {
+        return { radical: state.customRadicals[char], strokeCount: null, source: 'custom' };
+      }
+      if (radicalCache[char]) {
+        return radicalCache[char];
+      }
+
+      // 檢查本機教育部辭典
+      if (MOE_OFFICIAL_RADICALS[char]) {
+        const info = { radical: MOE_OFFICIAL_RADICALS[char], strokeCount: null, source: 'dict' };
+        radicalCache[char] = info;
+        return info;
+      }
+
+      // 連線至萌典 API (g0v moedict) 取得權威標準部首
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 2000);
+        const res = await fetch(`https://www.moedict.tw/uni/${encodeURIComponent(char)}.json`, {
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.radical) {
+            // 清理部首字串，去除符號並套用部首映射
+            const cleanRadical = data.radical.replace(/[^\u4e00-\u9fa5]/g, '') || data.radical;
+            const mappedRadical = RADICAL_VARIANTS_MAP[cleanRadical] || cleanRadical;
+            const info = {
+              radical: mappedRadical,
+              strokeCount: data.stroke_count || null,
+              source: 'moedict'
+            };
+            radicalCache[char] = info;
+            return info;
+          }
+        }
+      } catch (err) {
+        // API 連線逾時或離線，繼續啟動備援推導
+      }
+
+      // 智慧備援推導演算法
+      for (const [pattern, rad] of Object.entries(RADICAL_VARIANTS_MAP)) {
+        if (char.includes(pattern)) {
+          const info = { radical: rad, strokeCount: null, source: 'heuristic' };
+          radicalCache[char] = info;
+          return info;
+        }
+      }
+
+      const defaultInfo = { radical: char, strokeCount: null, source: 'fallback' };
+      radicalCache[char] = defaultInfo;
+      return defaultInfo;
+    }
+
+    /**
+     * 取得生字部首（同步快速讀取）
+     */
+    function getCharRadicalSync(char) {
+      if (state.customRadicals[char]) return state.customRadicals[char];
+      if (radicalCache[char]) return radicalCache[char].radical;
+      if (MOE_OFFICIAL_RADICALS[char]) return MOE_OFFICIAL_RADICALS[char];
+      return '查中';
+    }
+
+    /**
+     * 更新左側生字部首檢驗面板
+     */
+    function updateRadicalBadges() {
+      if (!radicalBadgesContainer) return;
+      const cleanChars = Array.from(state.text).filter(c => c.trim().length > 0);
+      if (cleanChars.length === 0) {
+        radicalBadgesContainer.innerHTML = `<span class="text-xs text-slate-400">尚無生字</span>`;
+        return;
+      }
+
+      let html = '';
+      cleanChars.forEach((c) => {
+        const rad = state.customRadicals[c] || (radicalCache[c] ? radicalCache[c].radical : (MOE_OFFICIAL_RADICALS[c] || '...'));
+        html += `
+          <div class="inline-flex items-center gap-1 px-2 py-1 bg-white rounded-lg border border-slate-200 shadow-2xs text-xs">
+            <span class="font-kai font-bold text-slate-900">${c}</span>
+            <span class="text-slate-400">:</span>
+            <input type="text" maxlength="2" value="${rad}" data-char="${c}" 
+                   class="radical-input w-7 text-center font-bold text-blue-700 bg-blue-50/70 border border-blue-200 rounded px-0.5 py-0.5 outline-none focus:border-rose-500 focus:bg-white text-xs" 
+                   title="點擊自訂 ${c} 的教育部部首">
+            <span class="text-[10px] text-slate-500">部</span>
+          </div>
+        `;
+      });
+      radicalBadgesContainer.innerHTML = html;
+
+      // 綁定部首即時修改監聽
+      radicalBadgesContainer.querySelectorAll('.radical-input').forEach(input => {
+        input.addEventListener('change', (e) => {
+          const char = e.target.dataset.char;
+          const val = e.target.value.trim().replace('部', '');
+          if (val) {
+            state.customRadicals[char] = val;
+            if (radicalCache[char]) radicalCache[char].radical = val;
+            renderWorksheet();
+          }
+        });
+      });
+    }
+
+    async function getCharacterData(char) {
+      if (charDataCache[char]) return charDataCache[char];
+      if (!window.HanziWriter || !window.HanziWriter.loadCharacterData) {
+        return null;
+      }
+      try {
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('timeout')), 2200)
+        );
+        const data = await Promise.race([
+          window.HanziWriter.loadCharacterData(char),
+          timeoutPromise
+        ]);
+        if (data && data.strokes) {
+          charDataCache[char] = data;
+          return data;
+        }
+      } catch (err) {
+        // 優雅降級處理，不阻斷頁面
+      }
+      return null;
+    }
+
+    function renderStepBlockHtml(char, charData, totalStrokes) {
+      if (!charData || !charData.strokes || charData.strokes.length === 0) {
+        return `
+          <div class="w-full bg-white/95 rounded-lg p-1 border border-slate-200 flex flex-col items-center justify-center my-0.5 flex-shrink-0">
+            <span class="text-[8px] text-slate-400 font-bold mb-0.5">筆畫分解</span>
+            <span class="text-[9px] text-slate-500 font-kai">依教育部標準楷體臨摹</span>
+          </div>
+        `;
+      }
+
+      const strokes = charData.strokes;
+      let stepsSvgHtml = '';
+
+      // 依字體粗細調整筆劃透明度與視覺強度
+      const activeColor = state.fontWeight === 'light' ? '#f43f5e' : '#e11d48';
+      const prevColor = state.fontWeight === 'light' ? '#94a3b8' : '#64748b';
+
+      for (let i = 0; i < strokes.length; i++) {
+        let pathHtml = '';
+        for (let p = 0; p < i; p++) {
+          pathHtml += `<path d="${strokes[p]}" fill="${prevColor}" />`;
+        }
+        pathHtml += `<path d="${strokes[i]}" fill="${activeColor}" />`;
+
+        // 放大分解圖小方格（由原本 6.5 擴大至 7.5~8，筆順文字更易讀）
+        stepsSvgHtml += `
+          <div class="flex flex-col items-center flex-shrink-0" title="第 ${i + 1} 筆">
+            <div class="w-7 h-7 sm:w-8 sm:h-8 bg-white rounded border border-slate-300 shadow-2xs p-0.5 overflow-hidden flex items-center justify-center relative">
+              <svg viewBox="0 0 1024 1024" class="w-full h-full pointer-events-none">
+                <line x1="512" y1="0" x2="512" y2="1024" stroke="#fee2e2" stroke-width="18" stroke-dasharray="32,32"/>
+                <line x1="0" y1="512" x2="1024" y2="512" stroke="#fee2e2" stroke-width="18" stroke-dasharray="32,32"/>
+                <g transform="translate(0, 920) scale(1, -1)">
+                  ${pathHtml}
+                </g>
+              </svg>
+            </div>
+            <span class="text-[9px] text-slate-600 font-bold leading-none mt-0.5">${i + 1}</span>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="w-full bg-white/95 rounded-lg p-1 border border-slate-200 shadow-2xs flex flex-col items-center flex-shrink-0 my-0.5">
+          <div class="flex items-center justify-between w-full px-1 mb-0.5">
+            <span class="text-[9px] font-bold text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded">筆畫分解</span>
+            <span class="text-[9px] text-slate-600 font-medium">共 ${strokes.length} 筆</span>
+          </div>
+          <!-- 完整展開呈現，無下拉滾動條，尺寸放大 -->
+          <div class="w-full flex flex-wrap justify-center items-center gap-1 py-0.5">
+            ${stepsSvgHtml}
+          </div>
+        </div>
+      `;
+    }
+
+    /**
+     * 核心演算法：依據字數情況換行（嚴格最多 2 行，上限 16 次練習，並最大化方格尺寸）
+     */
+    function renderPracticeAreaHtml(char, rawTotalBoxes, colMode) {
+      // 確保總練習次數嚴格上限為 16 次
+      const totalBoxes = Math.min(16, Math.max(1, rawTotalBoxes));
+      const numLines = getEffectiveLines(colMode, totalBoxes);
+      const gridSvg = generateGridSvg(state.gridType, state.gridColor);
+
+      // 每行分配格數（右行滿了自動流向左行）
+      const boxesPerLine = Math.ceil(totalBoxes / numLines);
+
+      // 進一步放大書寫格子尺寸 (單行特大格擴增至 64px，雙行格擴增至 50px)
+      const isSingle = (numLines === 1);
+      const boxMaxClass = isSingle 
+        ? 'w-full aspect-square max-w-[56px] sm:max-w-[64px] min-h-[38px]' 
+        : 'w-full aspect-square max-w-[44px] sm:max-w-[50px] min-h-[30px]';
+
+      // 依字體粗細設定選擇字型 class
+      const fontClass = isSingle 
+        ? (state.fontWeight === 'light' ? 'text-3xl sm:text-[40px] font-kai-light font-light' : 'text-3xl sm:text-[40px] font-kai font-normal')
+        : (state.fontWeight === 'light' ? 'text-2xl sm:text-[30px] font-kai-light font-light' : 'text-2xl sm:text-[30px] font-kai font-normal');
+      const badgeText = isSingle ? 'text-[8px]' : 'text-[7px]';
+
+      let linesHtml = '';
+      let currentBoxIndex = 0;
+
+      for (let line = 0; line < numLines; line++) {
+        const lineBoxesCount = Math.min(boxesPerLine, totalBoxes - currentBoxIndex);
+        if (lineBoxesCount <= 0) break;
+
+        let lineBoxesHtml = '';
+        for (let b = 0; b < lineBoxesCount; b++) {
+          const isTrace = currentBoxIndex < state.traceCount;
+          if (isTrace) {
+            lineBoxesHtml += `
+              <div class="relative ${boxMaxClass} bg-white rounded-md border border-slate-300 shadow-2xs flex items-center justify-center overflow-hidden flex-shrink-0">
+                ${gridSvg}
+                <span class="${fontClass} text-slate-300 select-none leading-none pointer-events-none">${char}</span>
+                <span class="absolute bottom-0 right-0.5 ${badgeText} text-slate-400 pointer-events-none no-print">描</span>
+              </div>
+            `;
+          } else {
+            lineBoxesHtml += `
+              <div class="relative ${boxMaxClass} bg-white rounded-md border border-slate-300 shadow-2xs flex items-center justify-center overflow-hidden flex-shrink-0">
+                ${gridSvg}
+                <span class="absolute bottom-0 right-0.5 ${badgeText} text-slate-300 pointer-events-none no-print">練</span>
+              </div>
+            `;
+          }
+          currentBoxIndex++;
+        }
+
+        const dividerHtml = (line < numLines - 1 && currentBoxIndex < totalBoxes)
+          ? `<div class="w-px bg-slate-200/90 self-stretch my-0.5 flex-shrink-0"></div>`
+          : '';
+
+        linesHtml += `
+          <div class="flex-1 min-w-0 ${isSingle ? 'w-full' : 'max-w-[49%]'} flex flex-col items-center justify-start gap-1 h-full overflow-hidden">
+            ${numLines > 1 ? `<span class="text-[8px] font-bold text-rose-500/80 bg-rose-50/70 px-1 rounded no-print leading-none mb-0.5 flex-shrink-0">第${line + 1}行</span>` : ''}
+            <div class="w-full flex-1 min-h-0 flex flex-col justify-start items-center gap-1 overflow-hidden">
+              ${lineBoxesHtml}
+            </div>
+          </div>
+          ${dividerHtml}
+        `;
+      }
+
+      // flex-row-reverse 嚴格保障直行中文「由右至左」傳統排版
+      return `
+        <div class="w-full flex-1 min-h-0 flex flex-row-reverse justify-center items-stretch gap-1 pt-0.5 overflow-hidden">
+          ${linesHtml}
+        </div>
+      `;
+    }
+
+    /**
+     * 建立單一生字欄位（含部首、總筆畫、完整筆畫分解與自動換行練習格）
+     */
+    async function buildCharacterColumn(colEl, char) {
+      // 同步先渲染基本架構，避免畫面等待卡頓
+      const radicalInfo = await fetchMoeRadical(char);
+      const charData = await getCharacterData(char);
+
+      const radical = state.customRadicals[char] || (radicalInfo ? radicalInfo.radical : getCharRadicalSync(char));
+      const totalStrokes = (radicalInfo && radicalInfo.strokeCount) 
+        ? radicalInfo.strokeCount 
+        : (charData ? charData.strokes.length : (MOE_OFFICIAL_RADICALS[char] ? '—' : '—'));
+
+      const stepsHtml = renderStepBlockHtml(char, charData, totalStrokes);
+      const totalBoxes = state.traceCount + state.blankCount;
+      const practiceAreaHtml = renderPracticeAreaHtml(char, totalBoxes, state.colMode);
+
+      const topGridSvg = generateGridSvg(state.gridType, state.gridColor);
+
+      // 依字體粗細套用至示範大字
+      const demoFontClass = state.fontWeight === 'light' 
+        ? 'font-kai-light font-light text-slate-900 group-hover:text-rose-600' 
+        : 'font-kai font-bold text-slate-900 group-hover:text-rose-600';
+
+      colEl.innerHTML = `
+        <!-- 頂部示範大字區 -->
+        <div class="w-full flex flex-col items-center flex-shrink-0 mb-0.5">
+          <div class="cursor-pointer group relative w-12 h-12 sm:w-13 sm:h-13 bg-white rounded-xl shadow-xs border border-slate-300 flex items-center justify-center overflow-hidden hover:border-rose-400 transition"
+               title="點擊播放動態筆順與互動測驗" onclick="openCharModal('${char}')">
+            ${topGridSvg}
+            <span class="${demoFontClass} text-3xl sm:text-[36px] group-hover:scale-105 transition select-none leading-none">${char}</span>
+          </div>
+
+          <!-- 生字部首與筆畫資訊標籤（教育部標準） -->
+          <div class="flex items-center justify-center gap-1 mt-0.5 text-slate-800 w-full px-0.5">
+            <span class="text-[9px] sm:text-[10px] px-1 py-0.5 bg-blue-50 text-blue-800 border border-blue-200 rounded font-bold whitespace-nowrap" title="教育部標準部首">
+              部首：${radical} 部
+            </span>
+            <span class="text-[9px] sm:text-[10px] px-1 py-0.5 bg-rose-50 text-rose-800 border border-rose-200 rounded font-bold whitespace-nowrap">
+              ${totalStrokes !== '—' ? totalStrokes : (charData ? charData.strokes.length : '—')} 畫
+            </span>
+          </div>
+        </div>
+
+        <!-- 完整筆畫分解步驟 -->
+        ${stepsHtml}
+
+        <!-- 學生書寫練習格（字數過多時自動換行排版） -->
+        ${practiceAreaHtml}
+      `;
+    }
+
+    async function renderWorksheet() {
+      syncStateFromInputs();
+      updateWrapIndicator();
+
+      const cleanChars = Array.from(state.text).filter(c => c.trim().length > 0);
+      if (charCounter) charCounter.textContent = `共 ${cleanChars.length} 字`;
+
+      // 同步預先載入所有生字的教育部部首
+      cleanChars.forEach(c => fetchMoeRadical(c).then(() => updateRadicalBadges()));
+      updateRadicalBadges();
+
+      if (!pagesContainer) return;
+
+      if (cleanChars.length === 0) {
+        pagesContainer.innerHTML = `
+          <div class="p-12 text-center text-slate-400 bg-white rounded-3xl border border-dashed border-slate-300 w-full max-w-xl">
+            <p class="font-medium text-sm">請在左側輸入欲練習的生字</p>
+          </div>
+        `;
+        if (pageSummary) pageSummary.textContent = '第 0 頁 / 共 0 頁';
+        return;
+      }
+
+      // 每頁固定 6 個生字
+      const pages = [];
+      for (let i = 0; i < cleanChars.length; i += CHARS_PER_PAGE) {
+        pages.push(cleanChars.slice(i, i + CHARS_PER_PAGE));
+      }
+
+      if (pageSummary) pageSummary.textContent = `第 1 頁 / 共 ${pages.length} 頁（每頁固定 6 個生字）`;
+      pagesContainer.innerHTML = '';
+
+      for (let pageIdx = 0; pageIdx < pages.length; pageIdx++) {
+        const pageChars = pages[pageIdx];
+        const pageDiv = document.createElement('div');
+        pageDiv.className = 'a4-landscape print-page bg-white p-2.5 sm:p-3 rounded-2xl shadow-xl border border-slate-200 flex flex-col justify-between relative select-none overflow-hidden h-[209mm] max-h-[209mm]';
+
+        const totalBoxes = state.traceCount + state.blankCount;
+        const currentLines = getEffectiveLines(state.colMode, totalBoxes);
+        const modeLabel = state.colMode === 'auto' 
+          ? (currentLines === 1 ? '單行特大格' : '雙直行大格') 
+          : (state.colMode === 'single' ? '單行特大格' : '強制雙直行');
+
+        const headerHtml = `
+          <div class="border-b-2 border-slate-800 pb-1 mb-1 flex items-center justify-between flex-shrink-0">
+            <div class="flex items-center gap-4">
+              <h2 class="text-2xl sm:text-[27px] font-bold font-kai text-slate-900 tracking-wider flex items-center gap-2 leading-none">
+                ${state.title || '國語生字筆順習字帖'}
+                <span class="text-xs font-sans px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold no-print">
+                  ${modeLabel}
+                </span>
+              </h2>
+              <div class="flex items-center gap-4 text-sm sm:text-base text-slate-700 font-medium leading-none">
+                <span>班級：${state.subtitle || '三年甲班'}</span>
+                <span>座號：______</span>
+                <span>姓名：${state.student || '____________'}</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <div class="border border-slate-300 rounded px-3 py-0.5 text-center bg-slate-50 flex items-center gap-1.5">
+                <span class="text-xs text-slate-500 font-bold">評閱</span>
+                <span class="text-sm sm:text-base font-bold text-rose-600 font-serif">／100</span>
+              </div>
+            </div>
+          </div>
+        `;
+
+        // 6 欄容器：由右往左排版
+        const columnsWrapper = document.createElement('div');
+        columnsWrapper.className = 'flex-1 min-h-0 flex flex-row-reverse justify-between items-stretch gap-2 w-full my-0.5 overflow-hidden';
+
+        // 建立所有欄位並非同步等候載入
+        const colPromises = [];
+        for (let cIdx = 0; cIdx < pageChars.length; cIdx++) {
+          const char = pageChars[cIdx];
+          const charCol = document.createElement('div');
+          charCol.className = 'flex-1 min-w-0 border border-slate-200 rounded-xl bg-slate-50/40 p-1 flex flex-col justify-between items-center relative overflow-hidden h-full';
+          columnsWrapper.appendChild(charCol);
+          colPromises.push(buildCharacterColumn(charCol, char));
+        }
+
+        // 補齊未滿 6 字之空白留白欄
+        for (let k = pageChars.length; k < CHARS_PER_PAGE; k++) {
+          const emptyCol = document.createElement('div');
+          emptyCol.className = 'flex-1 min-w-0 border border-dashed border-slate-200 rounded-xl bg-slate-50/20 p-2 flex items-center justify-center text-slate-300 text-xs h-full';
+          emptyCol.innerHTML = `<span>留白練字欄</span>`;
+          columnsWrapper.appendChild(emptyCol);
+        }
+
+        const footerHtml = `
+          <div class="pt-1 border-t border-slate-200 flex justify-between items-center text-xs text-slate-500 mt-1 flex-shrink-0 leading-none">
+            <span>※ 書寫指引：由右至左直行書寫；字數過多已自動換至左行。教育部標準楷體與部首檢定。</span>
+            <span class="font-bold text-slate-600">第 ${pageIdx + 1} 頁 / 共 ${pages.length} 頁</span>
+          </div>
+        `;
+
+        pageDiv.innerHTML = headerHtml;
+        pageDiv.appendChild(columnsWrapper);
+        pageDiv.insertAdjacentHTML('beforeend', footerHtml);
+        pagesContainer.appendChild(pageDiv);
+
+        // 等候該頁所有字欄建置完成
+        await Promise.all(colPromises);
+      }
+    }
+
+    async function openCharModal(char) {
+      if (!charModal) return;
+      if (modalCharDisplay) modalCharDisplay.textContent = char;
+      const radicalInfo = await fetchMoeRadical(char);
+      const radical = state.customRadicals[char] || (radicalInfo ? radicalInfo.radical : getCharRadicalSync(char));
+      if (quizStatus) {
+        quizStatus.textContent = '載入動態筆順中...';
+        quizStatus.className = 'h-6 text-xs font-bold text-center text-slate-600 flex items-center justify-center';
+      }
+      if (writerTarget) writerTarget.innerHTML = '';
+      charModal.classList.remove('hidden');
+
+      if (window.HanziWriter) {
+        try {
+          activeModalWriter = HanziWriter.create(writerTarget, char, {
+            width: 210,
+            height: 210,
+            padding: 10,
+            showOutline: true,
+            strokeAnimationSpeed: 1,
+            delayBetweenStrokes: 180,
+            strokeColor: '#e11d48',
+            radicalColor: '#2563eb',
+            outlineColor: '#e2e8f0',
+            onLoadCharDataSuccess: (data) => {
+              const strokes = (radicalInfo && radicalInfo.strokeCount) ? radicalInfo.strokeCount : data.strokes.length;
+              if (modalStrokeCount) modalStrokeCount.textContent = `教育部標準：${radical} 部 · ${strokes} 畫`;
+              if (quizStatus) quizStatus.textContent = '✓ 點擊「播放筆順」觀看示範或「筆順測驗」進行手寫';
+              activeModalWriter.animateCharacter();
+            },
+            onLoadCharDataError: () => {
+              if (modalStrokeCount) modalStrokeCount.textContent = `教育部標準：${radical} 部`;
+              if (quizStatus) quizStatus.textContent = '此字為教育部標準楷體結構，可直接臨摹練習。';
+            }
+          });
+        } catch (e) {
+          if (writerTarget) writerTarget.innerHTML = `<span class="text-6xl font-kai text-slate-800">${char}</span>`;
+        }
+      } else {
+        if (writerTarget) writerTarget.innerHTML = `<span class="text-6xl font-kai text-slate-800">${char}</span>`;
+        if (quizStatus) quizStatus.textContent = '離線字型模式';
+      }
+    }
+
+    function closeModal() {
+      if (charModal) charModal.classList.add('hidden');
+      if (activeModalWriter) {
+        try {
+          activeModalWriter.cancelQuiz();
+        } catch (e) {}
+        activeModalWriter = null;
+      }
+    }
+
+    // 立即更新排版按鈕監聽
+    if (btnRefresh) {
+      btnRefresh.addEventListener('click', () => {
+        syncStateFromInputs();
+        renderWorksheet();
+
+        btnRefresh.classList.add('bg-emerald-600');
+        btnRefresh.classList.remove('bg-slate-800');
+        if (btnRefreshText) btnRefreshText.textContent = '✓ 排版與換行已即時更新！';
+        setTimeout(() => {
+          btnRefresh.classList.remove('bg-emerald-600');
+          btnRefresh.classList.add('bg-slate-800');
+          if (btnRefreshText) btnRefreshText.textContent = '立即更新排版';
+        }, 1000);
+      });
+    }
+
+    // 換行模式切換按鈕事件
+    function updateModeButtons(selectedMode) {
+      state.colMode = selectedMode;
+      [
+        { btn: modeAutoBtn, mode: 'auto' },
+        { btn: modeSingleBtn, mode: 'single' },
+        { btn: modeDoubleBtn, mode: 'double' }
+      ].forEach(({ btn, mode }) => {
+        if (!btn) return;
+        if (mode === selectedMode) {
+          btn.className = 'py-2 border-2 border-rose-500 bg-rose-50/70 rounded-xl text-rose-700 font-bold text-center transition text-xs shadow-xs';
+        } else {
+          btn.className = 'py-2 border border-slate-200 hover:border-slate-300 rounded-xl text-slate-600 font-medium text-center transition text-xs';
+        }
+      });
+      renderWorksheet();
+    }
+
+    if (modeAutoBtn) modeAutoBtn.addEventListener('click', () => updateModeButtons('auto'));
+    if (modeSingleBtn) modeSingleBtn.addEventListener('click', () => updateModeButtons('single'));
+    if (modeDoubleBtn) modeDoubleBtn.addEventListener('click', () => updateModeButtons('double'));
+
+    // 輸入監聽
+    let debounceTimer = null;
+    if (inputChars) {
+      inputChars.addEventListener('input', () => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+          syncStateFromInputs();
+          renderWorksheet();
+        }, 300);
+      });
+    }
+
+    if (inputTitle) {
+      inputTitle.addEventListener('input', () => {
+        syncStateFromInputs();
+        renderWorksheet();
+      });
+    }
+
+    if (inputSubtitle) {
+      inputSubtitle.addEventListener('input', () => {
+        syncStateFromInputs();
+        renderWorksheet();
+      });
+    }
+
+    if (inputStudent) {
+      inputStudent.addEventListener('input', () => {
+        syncStateFromInputs();
+        renderWorksheet();
+      });
+    }
+
+    // 格線按鈕監聽
+    document.querySelectorAll('.grid-type-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.grid-type-btn').forEach(b => {
+          b.className = 'grid-type-btn py-1.5 border border-slate-200 hover:border-slate-300 rounded-lg text-slate-600 font-medium text-center transition';
+        });
+        btn.className = 'grid-type-btn py-1.5 border-2 border-rose-500 bg-rose-50/70 rounded-lg text-rose-700 font-bold text-center transition';
+        state.gridType = btn.dataset.type;
+        renderWorksheet();
+      });
+    });
+
+    // 生字字體粗細切換監聽 (標準體 / 細體)
+    document.querySelectorAll('.font-weight-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.font-weight-btn').forEach(b => {
+          b.className = 'font-weight-btn py-1.5 border border-slate-200 hover:border-slate-300 rounded-lg text-slate-600 font-medium text-center transition text-xs';
+        });
+        btn.className = 'font-weight-btn py-1.5 border-2 border-rose-500 bg-rose-50/70 rounded-lg text-rose-700 font-bold text-center transition text-xs';
+        state.fontWeight = btn.dataset.weight;
+        const label = document.getElementById('font-weight-label');
+        if (label) label.textContent = state.fontWeight === 'light' ? '細體 (清秀臨摹)' : '標準楷體';
+        renderWorksheet();
+      });
+    });
+
+    // 印色監聽
+    document.querySelectorAll('input[name="grid-color"]').forEach(radio => {
+      radio.addEventListener('change', (e) => {
+        state.gridColor = e.target.value;
+        renderWorksheet();
+      });
+    });
+
+    // 滑桿監聽
+    if (rangeTrace) {
+      rangeTrace.addEventListener('input', () => {
+        syncStateFromInputs();
+        renderWorksheet();
+      });
+    }
+
+    if (rangeBlank) {
+      rangeBlank.addEventListener('input', () => {
+        syncStateFromInputs();
+        renderWorksheet();
+      });
+    }
+
+    // 範例快速填入
+    document.querySelectorAll('.preset-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (inputChars) inputChars.value = btn.dataset.text;
+        syncStateFromInputs();
+        renderWorksheet();
+      });
+    });
+
+    // 彈窗監聽
+    if (btnCloseModal) btnCloseModal.addEventListener('click', closeModal);
+    if (charModal) {
+      charModal.addEventListener('click', (e) => {
+        if (e.target === charModal) closeModal();
+      });
+    }
+
+    if (btnAnimate) {
+      btnAnimate.addEventListener('click', () => {
+        if (activeModalWriter) activeModalWriter.animateCharacter();
+      });
+    }
+
+    if (btnLoopAnimate) {
+      btnLoopAnimate.addEventListener('click', () => {
+        if (activeModalWriter) activeModalWriter.loopCharacterAnimation();
+      });
+    }
+
+    if (btnStartQuiz) {
+      btnStartQuiz.addEventListener('click', () => {
+        if (activeModalWriter) {
+          if (quizStatus) {
+            quizStatus.textContent = '請在上方方格內依照筆順書寫...';
+            quizStatus.className = 'h-6 text-xs font-bold text-center text-blue-600 flex items-center justify-center';
+          }
+          activeModalWriter.quiz({
+            onCorrectStroke: (data) => {
+              if (quizStatus) {
+                quizStatus.textContent = `✓ 筆畫正確！(第 ${data.strokeNum + 1} 筆)`;
+                quizStatus.className = 'h-6 text-xs font-bold text-center text-emerald-600 flex items-center justify-center';
+              }
+            },
+            onMistake: () => {
+              if (quizStatus) {
+                quizStatus.textContent = '✗ 筆順錯誤，請再試一次！';
+                quizStatus.className = 'h-6 text-xs font-bold text-center text-rose-600 flex items-center justify-center';
+              }
+            },
+            onComplete: () => {
+              if (quizStatus) {
+                quizStatus.textContent = '🎉 太棒了！筆順測驗完成！';
+                quizStatus.className = 'h-6 text-xs font-bold text-center text-emerald-700 flex items-center justify-center';
+              }
+            }
+          });
+        }
+      });
+    }
+
+    const demoModalBtn = document.getElementById('btn-demo-modal');
+    if (demoModalBtn) {
+      demoModalBtn.addEventListener('click', () => {
+        const firstChar = Array.from(state.text).find(c => c.trim().length > 0) || '天';
+        openCharModal(firstChar);
+      });
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && charModal && !charModal.classList.contains('hidden')) {
+        closeModal();
+      }
+    });
+
+    window.onload = function() {
+      syncStateFromInputs();
+      renderWorksheet();
+    };
+  </script>
+</body>
+</html>
