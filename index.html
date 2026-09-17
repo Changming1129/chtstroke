@@ -269,6 +269,25 @@
           </div>
         </div>
 
+        <!-- 示範字與練習空格大小手動調整 -->
+        <div class="pt-3 border-t border-slate-100 space-y-3 text-xs">
+          <div class="space-y-1">
+            <div class="flex justify-between">
+              <span class="font-medium text-slate-700">示範生字大小</span>
+              <span id="demo-size-val" class="font-bold text-rose-600">50 px</span>
+            </div>
+            <input id="range-demo-size" type="range" min="36" max="72" value="50" class="w-full accent-rose-600 cursor-pointer">
+          </div>
+
+          <div class="space-y-1">
+            <div class="flex justify-between">
+              <span class="font-medium text-slate-700">學生練習空格大小</span>
+              <span id="box-size-val" class="font-bold text-rose-600">46 px</span>
+            </div>
+            <input id="range-box-size" type="range" min="28" max="68" value="46" class="w-full accent-rose-600 cursor-pointer">
+          </div>
+        </div>
+
         <!-- 練習格數量設定 (自主空白格數開放至 16 格，總格數上限 16 格) -->
         <div class="pt-3 border-t border-slate-100 space-y-3 text-xs">
           <div class="space-y-1">
@@ -405,6 +424,10 @@
     const pagesContainer = document.getElementById('worksheet-pages-container');
     const pageSummary = document.getElementById('page-summary');
     const radicalBadgesContainer = document.getElementById('radical-badges-container');
+    const rangeDemoSize = document.getElementById('range-demo-size');
+    const rangeBoxSize = document.getElementById('range-box-size');
+    const demoSizeVal = document.getElementById('demo-size-val');
+    const boxSizeVal = document.getElementById('box-size-val');
 
     // 彈窗元件參照
     const charModal = document.getElementById('char-modal');
@@ -432,6 +455,8 @@
       gridColor: '#e05252',
       traceCount: 2,
       blankCount: 4,
+      demoSize: 50,
+      boxSize: 46,
       customRadicals: {}, // 使用者自訂部首快取
     };
 
@@ -453,6 +478,14 @@
       }
       if (rangeBlank) {
         state.blankCount = parseInt(rangeBlank.value, 10) || 0;
+      }
+      if (rangeDemoSize) {
+        state.demoSize = parseInt(rangeDemoSize.value, 10) || 50;
+        if (demoSizeVal) demoSizeVal.textContent = `${state.demoSize} px`;
+      }
+      if (rangeBoxSize) {
+        state.boxSize = parseInt(rangeBoxSize.value, 10) || 46;
+        if (boxSizeVal) boxSizeVal.textContent = `${state.boxSize} px`;
       }
 
       // 嚴格確保每字練習次數總和（描紅 + 自主）最多不超過 16 次
@@ -851,16 +884,13 @@
       // 每行分配格數（右行滿了自動流向左行）
       const boxesPerLine = Math.ceil(totalBoxes / numLines);
 
-      // 進一步放大書寫格子尺寸 (單行特大格擴增至 64px，雙行格擴增至 50px)
+      // 依使用者手動設定之 boxSize 動態計算尺寸，單行與雙行皆支援自適應
       const isSingle = (numLines === 1);
-      const boxMaxClass = isSingle 
-        ? 'w-full aspect-square max-w-[56px] sm:max-w-[64px] min-h-[38px]' 
-        : 'w-full aspect-square max-w-[44px] sm:max-w-[50px] min-h-[30px]';
-
-      // 依字體粗細設定選擇字型 class
-      const fontClass = isSingle 
-        ? (state.fontWeight === 'light' ? 'text-3xl sm:text-[40px] font-kai-light font-light' : 'text-3xl sm:text-[40px] font-kai font-normal')
-        : (state.fontWeight === 'light' ? 'text-2xl sm:text-[30px] font-kai-light font-light' : 'text-2xl sm:text-[30px] font-kai font-normal');
+      const effectiveBoxSize = isSingle ? state.boxSize : Math.min(state.boxSize, 52);
+      const boxStyle = `style="width: ${effectiveBoxSize}px; height: ${effectiveBoxSize}px; max-width: ${effectiveBoxSize}px; max-height: ${effectiveBoxSize}px;"`;
+      const charFontSize = Math.round(effectiveBoxSize * 0.72);
+      const fontStyle = `style="font-size: ${charFontSize}px;"`;
+      const fontWeightClass = (state.fontWeight === 'light') ? 'font-kai-light font-light' : 'font-kai font-normal';
       const badgeText = isSingle ? 'text-[8px]' : 'text-[7px]';
 
       let linesHtml = '';
@@ -875,15 +905,15 @@
           const isTrace = currentBoxIndex < state.traceCount;
           if (isTrace) {
             lineBoxesHtml += `
-              <div class="relative ${boxMaxClass} bg-white rounded-md border border-slate-300 shadow-2xs flex items-center justify-center overflow-hidden flex-shrink-0">
+              <div ${boxStyle} class="relative bg-white rounded-md border border-slate-300 shadow-2xs flex items-center justify-center overflow-hidden flex-shrink-0">
                 ${gridSvg}
-                <span class="${fontClass} text-slate-300 select-none leading-none pointer-events-none">${char}</span>
+                <span ${fontStyle} class="${fontWeightClass} text-slate-300 select-none leading-none pointer-events-none">${char}</span>
                 <span class="absolute bottom-0 right-0.5 ${badgeText} text-slate-400 pointer-events-none no-print">描</span>
               </div>
             `;
           } else {
             lineBoxesHtml += `
-              <div class="relative ${boxMaxClass} bg-white rounded-md border border-slate-300 shadow-2xs flex items-center justify-center overflow-hidden flex-shrink-0">
+              <div ${boxStyle} class="relative bg-white rounded-md border border-slate-300 shadow-2xs flex items-center justify-center overflow-hidden flex-shrink-0">
                 ${gridSvg}
                 <span class="absolute bottom-0 right-0.5 ${badgeText} text-slate-300 pointer-events-none no-print">練</span>
               </div>
@@ -934,7 +964,10 @@
 
       const topGridSvg = generateGridSvg(state.gridType, state.gridColor);
 
-      // 依字體粗細套用至示範大字
+      // 依自訂 demoSize 動態設定示範字大小與字重
+      const demoSize = state.demoSize || 50;
+      const demoBoxStyle = `style="width: ${demoSize}px; height: ${demoSize}px;"`;
+      const demoFontStyle = `style="font-size: ${Math.round(demoSize * 0.72)}px;"`;
       const demoFontClass = state.fontWeight === 'light' 
         ? 'font-kai-light font-light text-slate-900 group-hover:text-rose-600' 
         : 'font-kai font-bold text-slate-900 group-hover:text-rose-600';
@@ -942,10 +975,11 @@
       colEl.innerHTML = `
         <!-- 頂部示範大字區 -->
         <div class="w-full flex flex-col items-center flex-shrink-0 mb-0.5">
-          <div class="cursor-pointer group relative w-12 h-12 sm:w-13 sm:h-13 bg-white rounded-xl shadow-xs border border-slate-300 flex items-center justify-center overflow-hidden hover:border-rose-400 transition"
+          <div class="cursor-pointer group relative bg-white rounded-xl shadow-xs border border-slate-300 flex items-center justify-center overflow-hidden hover:border-rose-400 transition"
+               ${demoBoxStyle}
                title="點擊播放動態筆順與互動測驗" onclick="openCharModal('${char}')">
             ${topGridSvg}
-            <span class="${demoFontClass} text-3xl sm:text-[36px] group-hover:scale-105 transition select-none leading-none">${char}</span>
+            <span class="${demoFontClass} group-hover:scale-105 transition select-none leading-none" ${demoFontStyle}>${char}</span>
           </div>
 
           <!-- 生字部首與筆畫資訊標籤（教育部標準） -->
@@ -1243,6 +1277,21 @@
 
     if (rangeBlank) {
       rangeBlank.addEventListener('input', () => {
+        syncStateFromInputs();
+        renderWorksheet();
+      });
+    }
+
+    // 示範字大小與練習空格大小滑桿即時監聽
+    if (rangeDemoSize) {
+      rangeDemoSize.addEventListener('input', () => {
+        syncStateFromInputs();
+        renderWorksheet();
+      });
+    }
+
+    if (rangeBoxSize) {
+      rangeBoxSize.addEventListener('input', () => {
         syncStateFromInputs();
         renderWorksheet();
       });
